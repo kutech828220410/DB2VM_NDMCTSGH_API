@@ -25,6 +25,9 @@
     <Reference Include="Basic">
       <HintPath>0.DLL\Basic.dll</HintPath>
     </Reference>
+    <Reference Include="HIS_DB_Lib">
+      <HintPath>0.DLL\HIS_DB_Lib.dll</HintPath>
+    </Reference>
     <Reference Include="SQLUI">
       <HintPath>0.DLL\SQLUI.dll</HintPath>
     </Reference>
@@ -32,6 +35,12 @@
 
   <ItemGroup>
     <Folder Include="0.DLL\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="app.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties properties_4launchsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
