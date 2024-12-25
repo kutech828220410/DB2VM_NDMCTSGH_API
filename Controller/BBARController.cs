@@ -73,23 +73,23 @@ namespace DB2VM
 
             for (int i = 0; i < orderClasses.Count; i++)
             {
-                List<object[]> list_value = this.sQLControl_醫囑資料.GetRowsByDefult(null, enum_醫令資料.PRI_KEY.GetEnumName(), orderClasses[i].PRI_KEY);
+                List<object[]> list_value = this.sQLControl_醫囑資料.GetRowsByDefult(null, enum_醫囑資料.PRI_KEY.GetEnumName(), orderClasses[i].PRI_KEY);
                 if (list_value.Count == 0)
                 {
-                    object[] value = new object[new enum_醫令資料().GetLength()];
-                    value[(int)enum_醫令資料.GUID] = Guid.NewGuid().ToString();
-                    value[(int)enum_醫令資料.PRI_KEY] = orderClasses[i].PRI_KEY;
-                    value[(int)enum_醫令資料.藥局代碼] = orderClasses[i].藥局代碼;
-                    value[(int)enum_醫令資料.藥品碼] = orderClasses[i].藥品碼;
-                    value[(int)enum_醫令資料.藥品名稱] = orderClasses[i].藥品名稱;
-                    value[(int)enum_醫令資料.病歷號] = orderClasses[i].病歷號;
-                    value[(int)enum_醫令資料.藥袋條碼] = orderClasses[i].藥袋條碼;
-                    value[(int)enum_醫令資料.病人姓名] = orderClasses[i].病人姓名;
-                    value[(int)enum_醫令資料.交易量] = orderClasses[i].交易量;
-                    value[(int)enum_醫令資料.開方日期] = orderClasses[i].開方日期;
-                    value[(int)enum_醫令資料.產出時間] = DateTime.Now.ToDateTimeString_6();
-                    value[(int)enum_醫令資料.過帳時間] = DateTime.MinValue.ToDateTimeString_6();
-                    value[(int)enum_醫令資料.狀態] = "未過帳";
+                    object[] value = new object[new enum_醫囑資料().GetLength()];
+                    value[(int)enum_醫囑資料.GUID] = Guid.NewGuid().ToString();
+                    value[(int)enum_醫囑資料.PRI_KEY] = orderClasses[i].PRI_KEY;
+                    value[(int)enum_醫囑資料.藥局代碼] = orderClasses[i].藥局代碼;
+                    value[(int)enum_醫囑資料.藥品碼] = orderClasses[i].藥品碼;
+                    value[(int)enum_醫囑資料.藥品名稱] = orderClasses[i].藥品名稱;
+                    value[(int)enum_醫囑資料.病歷號] = orderClasses[i].病歷號;
+                    value[(int)enum_醫囑資料.藥袋條碼] = orderClasses[i].藥袋條碼;
+                    value[(int)enum_醫囑資料.病人姓名] = orderClasses[i].病人姓名;
+                    value[(int)enum_醫囑資料.交易量] = orderClasses[i].交易量;
+                    value[(int)enum_醫囑資料.開方日期] = orderClasses[i].開方日期;
+                    value[(int)enum_醫囑資料.產出時間] = DateTime.Now.ToDateTimeString_6();
+                    value[(int)enum_醫囑資料.過帳時間] = DateTime.MinValue.ToDateTimeString_6();
+                    value[(int)enum_醫囑資料.狀態] = "未過帳";
                     list_value_Add.Add(value);
                 }
             }
@@ -125,34 +125,86 @@ namespace DB2VM
             List<object[]> list_藥品資料 = this.sQLControl_UDSDBBCM.GetAllRows(null);
 
             string[] BarCode_Ary = BarCode.Split(';');
-            
-            if (BarCode_Ary.Length < 5) return "BarCode error!";
-            string 藥品碼 = BarCode_Ary[0].Substring(BarCode_Ary[0].Length - 5, 5);
-            string 床號 = BarCode_Ary[0].Substring(11, 5);
-            string 日期_temp = BarCode_Ary[1];
-            string 病人姓名 = BarCode_Ary[2];
-            string 病歷號 = BarCode_Ary[3];
-            string 交易量 = BarCode_Ary[4];
-            if(交易量.StringIsInt32() == false)
+            string 藥品碼 = "";
+            string 床號 = "";
+            string 日期_temp = "";
+            string 病人姓名 = "";
+            string 病歷號 = "";
+            string 領藥號 = "";
+            string 交易量 = "";
+            bool flag_OK = false;
+            if (BarCode_Ary.Length == 5)
+            {
+                藥品碼 = BarCode_Ary[0].Substring(BarCode_Ary[0].Length - 5, 5);
+                床號 = BarCode_Ary[0].Substring(11, 5);
+                日期_temp = BarCode_Ary[1];
+                病人姓名 = BarCode_Ary[2];
+                病歷號 = BarCode_Ary[3];
+                交易量 = BarCode_Ary[4];
+
+                if (交易量.StringIsInt32() == false)
+                {
+                    returnData.Code = -200;
+                    returnData.Result = $"交易量 error!{交易量}";
+                    return returnData.JsonSerializationt(true);
+                }
+                交易量 = (交易量.StringToInt32() * -1).ToString();
+                if (日期_temp.Length != 7)
+                {
+                    returnData.Code = -200;
+                    returnData.Result = $"Date error!{日期_temp}";
+                    return returnData.JsonSerializationt(true);
+                }
+                else
+                {
+                    string Year = 日期_temp.Substring(0, 3);
+                    string Month = 日期_temp.Substring(3, 2);
+                    string Day = 日期_temp.Substring(5, 2);
+                    Year = (Year.StringToInt32() + 1911).ToString();
+                    日期_temp = $"{Year}/{Month}/{Day}";
+                }
+
+                flag_OK = true;         
+            }
+            if(flag_OK == false)
+            {
+                BarCode_Ary = BarCode.Split('_');
+                if(BarCode_Ary.Length == 6)
+                {
+                    藥品碼 = BarCode_Ary[3].Substring(BarCode_Ary[3].Length - 5, 5);
+                    病人姓名 = BarCode_Ary[4];
+                    日期_temp = BarCode_Ary[0];
+                    病歷號 = BarCode_Ary[1];
+                    領藥號 = BarCode_Ary[2];
+                    交易量 = BarCode_Ary[5];
+                    if (交易量.StringIsInt32() == false)
+                    {
+                        returnData.Code = -200;
+                        returnData.Result = $"交易量 error!{交易量}";
+                        return returnData.JsonSerializationt(true);
+                    }
+                    交易量 = (交易量.StringToInt32() * -1).ToString();
+                    if (日期_temp.Length <= 8)
+                    {
+                        returnData.Code = -200;
+                        returnData.Result = $"Date error!{日期_temp}";
+                        return returnData.JsonSerializationt(true);
+                    }
+                    else
+                    {
+                        string Year = 日期_temp.Substring(0, 4);
+                        string Month = 日期_temp.Substring(4, 2);
+                        string Day = 日期_temp.Substring(6, 2);
+                        日期_temp = $"{Year}/{Month}/{Day}";
+                    }
+                    flag_OK = true;
+                }
+            }
+            if(flag_OK == false)
             {
                 returnData.Code = -200;
-                returnData.Result = $"交易量 error!{交易量}";
+                returnData.Result = $"BarCode error!  {BarCode}";
                 return returnData.JsonSerializationt(true);
-            }
-            交易量 = (交易量.StringToInt32() * -1).ToString();
-            if (日期_temp.Length != 7)
-            {
-                returnData.Code = -200;
-                returnData.Result = $"Date error!{日期_temp}";
-                return returnData.JsonSerializationt(true);
-            }
-            else
-            {
-                string Year = 日期_temp.Substring(0, 3);
-                string Month = 日期_temp.Substring(3, 2);
-                string Day = 日期_temp.Substring(5, 2);
-                Year = (Year.StringToInt32() + 1911).ToString();
-                日期_temp = $"{Year}/{Month}/{Day}";
             }
 
             list_藥品資料 = list_藥品資料.GetRows((int)enum_藥品資料_藥檔資料.藥品碼, 藥品碼);
@@ -178,29 +230,31 @@ namespace DB2VM
             orderClass.頻次 = "";
             orderClass.途徑 = "";
             orderClass.交易量 = 交易量;
-            orderClass.開方日期 = DateTime.Now.ToDateTimeString();
+            orderClass.領藥號 = 領藥號;
+            orderClass.開方日期 = 日期_temp;
             orderClasses.Add(orderClass);
 
             for (int i = 0; i < orderClasses.Count; i++)
             {
-                List<object[]> list_value = this.sQLControl_醫囑資料.GetRowsByDefult(null, enum_醫令資料.PRI_KEY.GetEnumName(), orderClasses[i].PRI_KEY);
+                List<object[]> list_value = this.sQLControl_醫囑資料.GetRowsByDefult(null, enum_醫囑資料.PRI_KEY.GetEnumName(), orderClasses[i].PRI_KEY);
                 if (list_value.Count == 0)
                 {
-                    object[] value = new object[new enum_醫令資料().GetLength()];
-                    value[(int)enum_醫令資料.GUID] = Guid.NewGuid().ToString();
-                    value[(int)enum_醫令資料.PRI_KEY] = orderClasses[i].PRI_KEY;
-                    value[(int)enum_醫令資料.藥局代碼] = orderClasses[i].藥局代碼;
-                    value[(int)enum_醫令資料.藥品碼] = orderClasses[i].藥品碼;
-                    value[(int)enum_醫令資料.藥品名稱] = orderClasses[i].藥品名稱;
-                    value[(int)enum_醫令資料.病歷號] = orderClasses[i].病歷號;
-                    value[(int)enum_醫令資料.藥袋條碼] = orderClasses[i].藥袋條碼;
-                    value[(int)enum_醫令資料.病人姓名] = orderClasses[i].病人姓名;
-                    value[(int)enum_醫令資料.交易量] = orderClasses[i].交易量;
-                    value[(int)enum_醫令資料.床號] = orderClasses[i].床號;
-                    value[(int)enum_醫令資料.開方日期] = orderClasses[i].開方日期;
-                    value[(int)enum_醫令資料.產出時間] = DateTime.Now.ToDateTimeString_6();
-                    value[(int)enum_醫令資料.過帳時間] = DateTime.MinValue.ToDateTimeString_6();
-                    value[(int)enum_醫令資料.狀態] = "未過帳";
+                    object[] value = new object[new enum_醫囑資料().GetLength()];
+                    value[(int)enum_醫囑資料.GUID] = Guid.NewGuid().ToString();
+                    value[(int)enum_醫囑資料.PRI_KEY] = orderClasses[i].PRI_KEY;
+                    value[(int)enum_醫囑資料.藥局代碼] = orderClasses[i].藥局代碼;
+                    value[(int)enum_醫囑資料.領藥號] = orderClasses[i].領藥號;
+                    value[(int)enum_醫囑資料.藥品碼] = orderClasses[i].藥品碼;
+                    value[(int)enum_醫囑資料.藥品名稱] = orderClasses[i].藥品名稱;
+                    value[(int)enum_醫囑資料.病歷號] = orderClasses[i].病歷號;
+                    value[(int)enum_醫囑資料.藥袋條碼] = orderClasses[i].藥袋條碼;
+                    value[(int)enum_醫囑資料.病人姓名] = orderClasses[i].病人姓名;
+                    value[(int)enum_醫囑資料.交易量] = orderClasses[i].交易量;
+                    value[(int)enum_醫囑資料.床號] = orderClasses[i].床號;
+                    value[(int)enum_醫囑資料.開方日期] = orderClasses[i].開方日期;
+                    value[(int)enum_醫囑資料.產出時間] = DateTime.Now.ToDateTimeString_6();
+                    value[(int)enum_醫囑資料.過帳時間] = DateTime.MinValue.ToDateTimeString_6();
+                    value[(int)enum_醫囑資料.狀態] = "未過帳";
                     list_value_Add.Add(value);
                 }
             }
